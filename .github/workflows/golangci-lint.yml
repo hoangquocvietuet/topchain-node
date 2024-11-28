@@ -17,8 +17,6 @@ permissions:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    env:
-      GOPATH: $HOME/go
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -30,8 +28,8 @@ jobs:
 
       - name: Clean Go Cache Directory
         run: |
-          rm -rf $GOPATH/pkg/mod
-          mkdir -p $GOPATH/pkg/mod
+          rm -rf ${HOME}/go/pkg/mod
+          mkdir -p ${HOME}/go/pkg/mod
 
       - name: Restore Cache
         uses: actions/cache@v3
