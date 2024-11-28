@@ -31,4 +31,3 @@ jobs:
           version: v1.62.0
           args: --verbose --timeout 5m
           skip-cache: true
-          skip-save-cache: true
