@@ -5,7 +5,7 @@ run:
   issues-exit-code: 2
   tests: true
   modules-download-mode: readonly
-  allow-parallel-runners: false
+  allow-parallel-runners: true
 linters:
   disable-all: true
   enable:
