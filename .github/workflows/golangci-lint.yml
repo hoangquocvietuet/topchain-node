@@ -15,18 +15,32 @@ permissions:
   pull-requests: read
 
 jobs:
-  golangci:
-    name: Lint
+  lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Go
+        uses: actions/setup-go@v4
         with:
-          go-version: '1.23.1'
-      - uses: actions/checkout@v3
-      - name: Install dependencies
-        run: go mod tidy
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+          go-version: 1.19
+
+      - name: Clean Cache Directory
+        run: |
+          rm -rf $GOPATH/pkg/mod
+          mkdir -p $GOPATH/pkg/mod
+
+      - name: Restore Cache
+        uses: actions/cache@v3
         with:
-          version: v1.62.0
-          args: --verbose --timeout 5m
+          path: ~/.cache/go-build
+          key: go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            go-build-${{ runner.os }}
+
+      - name: Install Dependencies
+        run: go mod download
+
+      - name: Run Linter
+        run: golangci-lint run
