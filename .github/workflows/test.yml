@@ -7,12 +7,18 @@ on:
     branches: [main]
 
 jobs:
-  test-setup:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      go-build: ${{ steps.cache-paths.outputs.go-build }}
+      go-mod: ${{ steps.cache-paths.outputs.go-mod }}
 
     steps:
-      - id: go-cache-paths
+      - name: Detect Go Cache Paths
+        id: cache-paths
         run: |
+          echo "go-build=$(go env GOCACHE)" >> $GITHUB_ENV
+          echo "go-mod=$(go env GOMODCACHE)" >> $GITHUB_ENV
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
       - uses: actions/checkout@v4
@@ -20,68 +26,49 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.1'
-      - name: Go Build Cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - name: Go Mod Cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-
-  test-build:
+  build:
     runs-on: ubuntu-latest
-    needs: test-setup
+    needs: setup
 
     steps:
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
       - uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.1'
-      - name: Go Build Cache
+      - name: Cache Go Build
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          path: ${{ needs.setup.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - name: Go Mod Cache
+      - name: Cache Go Modules
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          path: ${{ needs.setup.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
       - name: Build
         run: make build
 
-  test-testcases:
+  test:
     runs-on: ubuntu-latest
-    needs: test-setup
+    needs: setup
 
     steps:
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
       - uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.1'
-      - name: Go Build Cache
+      - name: Cache Go Build
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          path: ${{ needs.setup.outputs.go-build }}
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - name: Go Mod Cache
+      - name: Cache Go Modules
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          path: ${{ needs.setup.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-      - name: Run Go Test Cases
+      - name: Run Tests
         run: go test ./...
